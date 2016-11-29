@@ -1,0 +1,14 @@
+{
+    "name": "nezaniel/arboretum-contentrepositoryadaptor",
+    "type": "neos-nezaniel",
+    "description": "The legacy content repository adaptor for the Arboretum",
+    "require": {
+        "nezaniel/arboretum": "dev-master",
+        "typo3/typo3cr": "~2.3"
+    },
+    "autoload": {
+        "psr-4": {
+            "Nezaniel\\Arboretum\\ContentRepositoryAdaptor": "Classes"
+        }
+    }
+}
