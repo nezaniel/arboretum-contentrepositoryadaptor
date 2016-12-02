@@ -193,7 +193,7 @@ class Node implements NodeInterface
 
     public function getContextPath()
     {
-        return NodePaths::generateContextPath($this->getPath(), $this->context->getWorkspaceName(), $this->context->getDimensions());
+        return NodePaths::generateContextPath($this->getPath(), $this->getContext()->getWorkspaceName(), $this->context->getDimensions());
     }
 
     public function getDepth()
