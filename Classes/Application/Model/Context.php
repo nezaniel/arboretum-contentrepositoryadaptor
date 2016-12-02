@@ -29,7 +29,7 @@ class Context
      * @param Arboretum\Model\Tree $tree
      * @param Workspace $workspace
      */
-    public function __construct(Arboretum\Model\Tree $tree, Workspace $workspace)
+    public function __construct(Arboretum\Model\Tree $tree = null, Workspace $workspace = null)
     {
         $this->tree = $tree;
         $this->workspace = $workspace;
@@ -41,7 +41,7 @@ class Context
      */
     public function getWorkspaceName()
     {
-        return $this->tree->getIdentityComponents()['workspace'];
+        return $this->tree ? $this->tree->getIdentityComponents()['workspace'] : 'live';
     }
 
     /**
@@ -52,24 +52,35 @@ class Context
         return $this->workspace;
     }
 
+    /**
+     * @return array
+     */
     public function getDimensions()
     {
         $dimensions = [];
-        foreach ($this->tree->getIdentityComponents()['dimensionValues'] as $dimensionName => $dimensionValue) {
-            $dimensions[$dimensionName][] = $dimensionValue;
-        }
-        $fallbackTree = $this->tree->getFallback();
-        while ($fallbackTree) {
-            foreach ($fallbackTree->getIdentityComponents()['dimensionValues'] as $dimensionName => $dimensionValue) {
+        if ($this->tree) {
+            foreach ($this->tree->getIdentityComponents()['dimensionValues'] as $dimensionName => $dimensionValue) {
                 $dimensions[$dimensionName][] = $dimensionValue;
             }
-            $fallbackTree = $fallbackTree->getFallback();
+            $fallbackTree = $this->tree->getFallback();
+            while ($fallbackTree) {
+                foreach ($fallbackTree->getIdentityComponents()['dimensionValues'] as $dimensionName => $dimensionValue) {
+                    if (!in_array($dimensionValue, $dimensions[$dimensionName])) {
+                        $dimensions[$dimensionName][] = $dimensionValue;
+                    }
+                }
+                $fallbackTree = $fallbackTree->getFallback();
+            }
         }
 
         return $dimensions;
     }
 
-    public function getProperties() {
-        return $this->tree->getIdentityComponents();
+    /**
+     * @return array
+     */
+    public function getProperties()
+    {
+        return $this->tree ? $this->tree->getIdentityComponents() : [];
     }
 }

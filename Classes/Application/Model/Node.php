@@ -6,12 +6,15 @@ namespace Nezaniel\Arboretum\ContentRepositoryAdaptor\Application\Model;
  */
 
 use Nezaniel\Arboretum\Domain as Arboretum;
+use Nezaniel\Arboretum\Domain\Model\Tree;
 use TYPO3\Flow\Annotations as Flow;
 use TYPO3\TYPO3CR\Domain\Model\NodeInterface;
 use TYPO3\TYPO3CR\Domain\Model\NodeTemplate;
 use TYPO3\TYPO3CR\Domain\Model\NodeType;
 use TYPO3\TYPO3CR\Domain\Model\Workspace;
+use TYPO3\TYPO3CR\Domain\Repository\WorkspaceRepository;
 use TYPO3\TYPO3CR\Domain\Service\NodeTypeManager;
+use TYPO3\TYPO3CR\Domain\Utility\NodePaths;
 
 /**
  * The Node adaptor
@@ -25,14 +28,15 @@ class Node implements NodeInterface
     protected $nodeTypeManager;
 
     /**
+     * @Flow\Inject
+     * @var WorkspaceRepository
+     */
+    protected $workspaceRepository;
+
+    /**
      * @var Arboretum\Model\Node
      */
     protected $node;
-
-    /**
-     * @var Arboretum\Model\Tree
-     */
-    protected $tree;
 
     /**
      * @var Context
@@ -40,15 +44,16 @@ class Node implements NodeInterface
     protected $context;
 
     /**
-     * @param Arboretum\Model\Node $node
-     * @param Arboretum\Model\Tree $tree
-     * @param Workspace $workspace
+     * @var Workspace
      */
-    public function __construct(Arboretum\Model\Node $node, Arboretum\Model\Tree $tree, Workspace $workspace)
+    protected $workspace;
+
+    /**
+     * @param Arboretum\Model\Node $node
+     */
+    public function __construct(Arboretum\Model\Node $node)
     {
         $this->node = $node;
-        $this->tree = $tree;
-        $this->context = new Context($tree, $workspace);
     }
 
     public function setName($newName)
@@ -62,7 +67,7 @@ class Node implements NodeInterface
 
     public function getName()
     {
-        return $this->node->getIncomingEdgeInTree($this->tree)->getName();
+        return $this->node->getIncomingEdgeInTree($this->node->getTree())->getName();
     }
 
     public function getLabel()
@@ -162,19 +167,25 @@ class Node implements NodeInterface
     {
     }
 
+    /**
+     * @return array
+     */
     public function getAccessRoles()
     {
-        return [];
+        return $this->getProperty('_accessroles');
     }
 
     public function getPath()
     {
-        $incomingEdge = $this->node->getIncomingEdgeInTree($this->tree);
+        if (!$this->node->getTree()) {
+            return '/';
+        }
+        $incomingEdge = $this->node->getIncomingEdgeInTree($this->node->getTree());
         $path = '';
         while ($incomingEdge) {
-            $path .= '/' . $incomingEdge->getName();
+            $path = '/' . $incomingEdge->getName() . $path;
             $parentNode = $incomingEdge->getParent();
-            $incomingEdge = $parentNode->getIncomingEdgeInTree($this->tree);
+            $incomingEdge = $parentNode->getIncomingEdgeInTree($this->node->getTree());
         }
 
         return $path;
@@ -182,7 +193,7 @@ class Node implements NodeInterface
 
     public function getContextPath()
     {
-        return $this->getPath();
+        return NodePaths::generateContextPath($this->getPath(), $this->context->getWorkspaceName(), $this->context->getDimensions());
     }
 
     public function getDepth()
@@ -196,12 +207,27 @@ class Node implements NodeInterface
 
     public function getWorkspace()
     {
-        return $this->context->getWorkspace();
+        if (!$this->workspace) {
+            $this->workspace = $this->workspaceRepository->findByIdentifier($this->node->getTree() ? $this->node->getTree()->getIdentityComponents()['workspace'] : 'live');
+        }
+        return $this->workspace;
     }
 
     public function getIdentifier()
     {
         return $this->node->getIdentifier();
+    }
+
+    /**
+     * @return array|Tree[]
+     */
+    public function getContainingTrees()
+    {
+        $trees = [];
+        foreach ($this->node->getIncomingEdges() as $incomingEdge) {
+            $trees[] = $incomingEdge->getTree();
+        }
+        return $trees;
     }
 
     public function setIndex($index)
@@ -210,7 +236,10 @@ class Node implements NodeInterface
 
     public function getIndex()
     {
-        $incomingEdge = $this->node->getIncomingEdgeInTree($this->tree);
+        if (!$this->node->getTree()) {
+            return 0;
+        }
+        $incomingEdge = $this->node->getIncomingEdgeInTree($this->node->getTree());
         if ($incomingEdge) {
             return $incomingEdge->getPosition();
         }
@@ -220,9 +249,12 @@ class Node implements NodeInterface
 
     public function getParent()
     {
-        $incomingEdge = $this->node->getIncomingEdgeInTree($this->tree);
+        if (!$this->node->getTree()) {
+            return null;
+        }
+        $incomingEdge = $this->node->getIncomingEdgeInTree($this->node->getTree());
         if ($incomingEdge) {
-            return new Node($incomingEdge->getParent(), $this->tree, $this->context->getWorkspace());
+            return new Node($incomingEdge->getParent());
         }
 
         return null;
@@ -251,9 +283,9 @@ class Node implements NodeInterface
 
     public function getNode($path)
     {
-        $outgoingEdge = $this->node->getOutgoingEdgesInTree($this->tree)[$path] ?? null;
+        $outgoingEdge = $this->node->getOutgoingEdgesInTree($this->node->getTree())[$path] ?? null;
         if ($outgoingEdge) {
-            return new Node($outgoingEdge->getChild(), $this->tree, $this->context->getWorkspace());
+            return new Node($outgoingEdge->getChild());
         }
 
         return null;
@@ -329,6 +361,9 @@ class Node implements NodeInterface
 
     public function getContext()
     {
+        if (!$this->context) {
+            $this->context = new Context($this->node->getTree(), $this->getWorkspace());
+        }
         return $this->context;
     }
 

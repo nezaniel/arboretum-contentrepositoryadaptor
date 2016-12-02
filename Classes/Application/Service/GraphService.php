@@ -10,6 +10,7 @@ use Doctrine\ORM\EntityManager;
 use Nezaniel\Arboretum\Domain as Arboretum;
 use Nezaniel\Arboretum\Utility\TreeUtility;
 use TYPO3\Flow\Annotations as Flow;
+use TYPO3\Flow\Cli\ConsoleOutput;
 use TYPO3\Neos\Domain\Service\ContentDimensionPresetSourceInterface;
 use TYPO3\TYPO3CR\Domain\Model\NodeData;
 use TYPO3\TYPO3CR\Domain\Repository\NodeDataRepository;
@@ -49,21 +50,24 @@ class GraphService
 
 
     /**
+     * @param callable $nodeCallback
      * @return Arboretum\Model\Graph
      */
-    public function getGraph()
+    public function getGraph(callable $nodeCallback = null)
     {
         if (is_null($this->graph)) {
-            $this->initializeGraph();
+            $this->initializeGraph($nodeCallback);
         }
 
         return $this->graph;
     }
 
     /**
+     * @param callable $nodeCallback
+     * @param boolean $initializeNodes
      * @return void
      */
-    protected function initializeGraph()
+    protected function initializeGraph(callable $nodeCallback = null, $initializeNodes = true)
     {
         $this->graph = new Arboretum\Model\Graph('');
 
@@ -78,13 +82,20 @@ class GraphService
         foreach ($this->graph->getTrees() as $tree) {
             $this->nodesByPath['/'][$tree->getIdentityHash()] = $this->graph->getRootNode();
         }
-        $this->initializeNodes('/');
+        if ($nodeCallback) {
+            $nodeCallback($rootNodeData);
+        }
+        if ($initializeNodes) {
+            $this->initializeNodes('/', $nodeCallback);
+        }
     }
 
     /**
      * @param string $parentPath
+     * @param callable $nodeCallback
+     * @return void
      */
-    protected function initializeNodes($parentPath)
+    protected function initializeNodes($parentPath, callable $nodeCallback = null)
     {
         foreach ($this->fetchChildren($parentPath) as $path => $nodes) {
             foreach ($nodes as $nodeData) {
@@ -93,11 +104,17 @@ class GraphService
                 if (!isset($this->nodesByPath[$parentPath][$tree->getIdentityHash()])) {
                     continue;
                 }
-                $node = new Arboretum\Model\Node($tree, $nodeData->getNodeType()->getName(), $nodeData->getIdentifier(), $nodeData->getProperties());
+                $properties = $nodeData->getProperties();
+                $properties['_accessroles'] = $nodeData->getAccessRoles();
+                $node = new Arboretum\Model\Node($tree, $nodeData->getNodeType()->getName(), $nodeData->getIdentifier(), $properties);
                 $parentNode = $this->nodesByPath[$parentPath][$tree->getIdentityHash()];
                 $tree->connectNodes($parentNode, $node, $nodeData->getIndex(), $nodeData->getName());
 
                 $this->nodesByPath[$path][$tree->getIdentityHash()] = $node;
+
+                if ($nodeCallback) {
+                    $nodeCallback($nodeData);
+                }
             }
 
             foreach ($this->graph->getTrees() as $tree) {
@@ -119,8 +136,10 @@ class GraphService
                     }
                 }
             }
-            $this->getEntityManager()->clear();
-            $this->initializeNodes($path);
+            #if (substr_count($path, '/') < 3) {
+                $this->getEntityManager()->clear();
+                $this->initializeNodes($path, $nodeCallback);
+            #}
         }
     }
 
