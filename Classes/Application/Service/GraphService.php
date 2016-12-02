@@ -101,6 +101,10 @@ class GraphService
             foreach ($nodes as $nodeData) {
                 /** @var NodeData $nodeData */
                 $tree = $this->graph->getTree($this->getTreeIdentifier($nodeData->getWorkspace()->getName(), $nodeData->getDimensionValues()));
+                if (!$tree) {
+                    \TYPO3\Flow\var_dump($nodeData->getIdentifier());
+                    exit();
+                }
                 if (!isset($this->nodesByPath[$parentPath][$tree->getIdentityHash()])) {
                     continue;
                 }
