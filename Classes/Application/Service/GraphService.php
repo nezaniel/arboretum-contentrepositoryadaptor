@@ -37,12 +37,6 @@ class GraphService
      */
     protected $entityManager;
 
-    /**
-     * @Flow\Inject
-     * @var EdgeService
-     */
-    protected $edgeService;
-
 
     /**
      * @var array|Arboretum\Model\Node[]
