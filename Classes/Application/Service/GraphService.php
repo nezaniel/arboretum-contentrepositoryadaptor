@@ -140,8 +140,7 @@ class GraphService
                 /** @var NodeData $nodeData */
                 $tree = $this->graph->getTree($this->getTreeIdentifier($nodeData->getWorkspace()->getName(), $nodeData->getDimensionValues()));
                 if (!$tree) {
-                    \TYPO3\Flow\var_dump($this->getTreeIdentifier($nodeData->getWorkspace()->getName(), $nodeData->getDimensionValues()));
-                    \TYPO3\Flow\var_dump($this->graph->getTrees());
+                    \TYPO3\Flow\var_dump($nodeData->getIdentifier());
                     exit();
                 }
                 if (!isset($this->nodesByPath[$parentPath][$tree->getIdentityHash()])) {
