@@ -6,7 +6,7 @@ namespace Nezaniel\Arboretum\ContentRepositoryAdaptor\Application\Service;
  */
 
 use Neos\Flow\Annotations as Flow;
-use TYPO3\TYPO3CR\Domain\Service\Context as ContentContext;
+use Neos\ContentRepository\Domain\Service\Context as ContentContext;
 
 /**
  * The Tree service

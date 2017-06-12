@@ -10,9 +10,9 @@ use Doctrine\ORM\EntityManager;
 use Nezaniel\Arboretum\Domain as Arboretum;
 use Nezaniel\Arboretum\Utility\TreeUtility;
 use Neos\Flow\Annotations as Flow;
-use TYPO3\TYPO3CR\Domain\Model\NodeData;
-use TYPO3\TYPO3CR\Domain\Repository\NodeDataRepository;
-use TYPO3\TYPO3CR\Domain\Service\ContentDimensionCombinator;
+use Neos\ContentRepository\Domain\Model\NodeData;
+use Neos\ContentRepository\Domain\Repository\NodeDataRepository;
+use Neos\ContentRepository\Domain\Service\ContentDimensionCombinator;
 
 /**
  * The Graph service

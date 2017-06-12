@@ -7,7 +7,7 @@ namespace Nezaniel\Arboretum\ContentRepositoryAdaptor\Application\Model;
 
 use Nezaniel\Arboretum\Domain as Arboretum;
 use Neos\Flow\Annotations as Flow;
-use TYPO3\TYPO3CR\Domain\Model\Workspace;
+use Neos\ContentRepository\Domain\Model\Workspace;
 
 /**
  * The Context adaptor
