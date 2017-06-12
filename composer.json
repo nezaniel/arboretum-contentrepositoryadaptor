@@ -4,7 +4,7 @@
     "description": "The legacy content repository adaptor for the Arboretum",
     "require": {
         "nezaniel/arboretum": "dev-master",
-        "typo3/typo3cr": "~2.3"
+        "neos/content-repository": "~3.0"
     },
     "autoload": {
         "psr-4": {
