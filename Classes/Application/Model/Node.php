@@ -7,7 +7,7 @@ namespace Nezaniel\Arboretum\ContentRepositoryAdaptor\Application\Model;
 
 use Nezaniel\Arboretum\Domain as Arboretum;
 use Nezaniel\Arboretum\Domain\Model\Tree;
-use TYPO3\Flow\Annotations as Flow;
+use Neos\Flow\Annotations as Flow;
 use TYPO3\TYPO3CR\Domain\Model\NodeInterface;
 use TYPO3\TYPO3CR\Domain\Model\NodeTemplate;
 use TYPO3\TYPO3CR\Domain\Model\NodeType;

@@ -9,7 +9,7 @@ use Doctrine\Common\Persistence\ObjectManager;
 use Doctrine\ORM\EntityManager;
 use Nezaniel\Arboretum\Domain as Arboretum;
 use Nezaniel\Arboretum\Utility\TreeUtility;
-use TYPO3\Flow\Annotations as Flow;
+use Neos\Flow\Annotations as Flow;
 use TYPO3\TYPO3CR\Domain\Model\NodeData;
 use TYPO3\TYPO3CR\Domain\Repository\NodeDataRepository;
 use TYPO3\TYPO3CR\Domain\Service\ContentDimensionCombinator;
@@ -140,7 +140,7 @@ class GraphService
                 /** @var NodeData $nodeData */
                 $tree = $this->graph->getTree($this->getTreeIdentifier($nodeData->getWorkspace()->getName(), $nodeData->getDimensionValues()));
                 if (!$tree) {
-                    \TYPO3\Flow\var_dump($nodeData->getIdentifier());
+                    \Neos\Flow\var_dump($nodeData->getIdentifier());
                     exit();
                 }
                 if (!isset($this->nodesByPath[$parentPath][$tree->getIdentityHash()])) {
@@ -151,7 +151,7 @@ class GraphService
                 $nodeProperties['_lastModificationDateTime'] = $nodeData->getLastModificationDateTime();
                 $nodeProperties['_lastPublicationDateTime'] = $nodeData->getLastPublicationDateTime();
                 $edgeProperties = [
-                    'accessRoles' => empty($nodeData->getAccessRoles()) ? ['TYPO3.Flow:Everybody'] : $nodeData->getAccessRoles(),
+                    'accessRoles' => empty($nodeData->getAccessRoles()) ? ['Neos.Flow:Everybody'] : $nodeData->getAccessRoles(),
                     'hidden' => $nodeData->isHidden(),
                     'hiddenBeforeDateTime' => $nodeData->getHiddenBeforeDateTime(),
                     'hiddenAfterDateTime' => $nodeData->getHiddenAfterDateTime(),

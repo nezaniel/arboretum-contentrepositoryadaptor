@@ -5,7 +5,7 @@ namespace Nezaniel\Arboretum\ContentRepositoryAdaptor\Application\Service;
  * This file is part of the Nezaniel.Arboretum.ContentRepositoryAdaptor package.
  */
 
-use TYPO3\Flow\Annotations as Flow;
+use Neos\Flow\Annotations as Flow;
 use TYPO3\TYPO3CR\Domain\Service\Context as ContentContext;
 
 /**

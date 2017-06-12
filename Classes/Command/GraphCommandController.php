@@ -6,8 +6,8 @@ namespace Nezaniel\Arboretum\ContentRepositoryAdaptor\Command;
  */
 
 use Nezaniel\Arboretum\ContentRepositoryAdaptor\Application\Service\GraphService;
-use TYPO3\Flow\Annotations as Flow;
-use TYPO3\Flow\Cli\CommandController;
+use Neos\Flow\Annotations as Flow;
+use Neos\Flow\Cli\CommandController;
 
 /**
  * The Graph service
