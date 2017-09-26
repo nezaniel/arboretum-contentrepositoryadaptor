@@ -3,7 +3,7 @@
     "type": "neos-nezaniel",
     "description": "The legacy content repository adaptor for the Arboretum",
     "require": {
-        "nezaniel/arboretum": "dev-master",
+        "nezaniel/arboretum": "2.0.x-dev",
         "neos/content-repository": "~3.0"
     },
     "autoload": {
