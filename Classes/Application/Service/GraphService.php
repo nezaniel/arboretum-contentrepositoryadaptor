@@ -10,6 +10,7 @@ use Doctrine\ORM\EntityManager;
 use Nezaniel\Arboretum\Domain as Arboretum;
 use Nezaniel\Arboretum\Utility\TreeUtility;
 use Neos\Flow\Annotations as Flow;
+use Neos\ContentRepository\Domain as ContentRepository;
 use Neos\ContentRepository\Domain\Model\NodeData;
 use Neos\ContentRepository\Domain\Repository\NodeDataRepository;
 use Neos\ContentRepository\Domain\Service\ContentDimensionCombinator;
@@ -136,41 +137,45 @@ class GraphService
     protected function initializeNodes($parentPath, callable $nodeCallback = null, $maximumDepth = null)
     {
         foreach ($this->fetchChildren($parentPath) as $path => $nodes) {
-            foreach ($nodes as $nodeData) {
-                /** @var NodeData $nodeData */
-                $tree = $this->graph->getTree($this->getTreeIdentifier($nodeData->getWorkspace()->getName(), $nodeData->getDimensionValues()));
-                if (!$tree) {
-                    \Neos\Flow\var_dump($nodeData->getIdentifier());
-                    exit();
-                }
-                if (!isset($this->nodesByPath[$parentPath][$tree->getIdentityHash()])) {
-                    continue;
-                }
-                $nodeProperties = $nodeData->getProperties();
-                $nodeProperties['_creationDateTime'] = $nodeData->getCreationDateTime();
-                $nodeProperties['_lastModificationDateTime'] = $nodeData->getLastModificationDateTime();
-                $nodeProperties['_lastPublicationDateTime'] = $nodeData->getLastPublicationDateTime();
-                $edgeProperties = [
-                    'accessRoles' => empty($nodeData->getAccessRoles()) ? ['Neos.Flow:Everybody'] : $nodeData->getAccessRoles(),
-                    'hidden' => $nodeData->isHidden(),
-                    'hiddenBeforeDateTime' => $nodeData->getHiddenBeforeDateTime(),
-                    'hiddenAfterDateTime' => $nodeData->getHiddenAfterDateTime(),
-                    'hiddenInIndex' => $nodeData->isHiddenInIndex(),
-                ];
-                $node = new Arboretum\Model\Node($tree, $nodeData->getNodeType()->getName(), $nodeData->getIdentifier(), $nodeProperties);
-                $parentNode = $this->nodesByPath[$parentPath][$tree->getIdentityHash()];
-                $newEdge = $tree->connectNodes($parentNode, $node, $nodeData->getIndex(), $nodeData->getName(), $edgeProperties);
-                $newEdge->mergeStructurePropertiesWithParent();
+            if ($path === '/sites' && count($nodes) === 1) {
+                $nodeData = reset($nodes);
+                foreach ($this->graph->getTrees() as $tree) {
+                    $edgeProperties = [];
+                    $node = $this->createNodeFromNodeData($tree, $nodeData, $edgeProperties);
+                    $parentNode = $this->nodesByPath[$parentPath][$tree->getIdentityHash()];
+                    $newEdge = $tree->connectNodes($parentNode, $node, $nodeData->getIndex(), $nodeData->getName(), $edgeProperties);
+                    $newEdge->mergeStructurePropertiesWithParent();
 
-                $this->nodesByPath[$path][$tree->getIdentityHash()] = $node;
+                    $this->nodesByPath[$path][$tree->getIdentityHash()] = $node;
 
-                if ($nodeCallback) {
-                    $nodeCallback($nodeData);
+                    if ($nodeCallback) {
+                        $nodeCallback($nodeData);
+                    }
+                }
+            } else {
+                foreach ($nodes as $nodeData) {
+                    /** @var NodeData $nodeData */
+                    $tree = $this->graph->getTree($this->getTreeIdentifier($nodeData->getWorkspace()->getName(), $nodeData->getDimensionValues()));
+                    if (!isset($this->nodesByPath[$parentPath][$tree->getIdentityHash()])) {
+                        continue;
+                    }
+
+                    $edgeProperties = [];
+                    $node = $this->createNodeFromNodeData($tree, $nodeData, $edgeProperties);
+                    $parentNode = $this->nodesByPath[$parentPath][$tree->getIdentityHash()];
+                    $newEdge = $tree->connectNodes($parentNode, $node, $nodeData->getIndex(), $nodeData->getName(), $edgeProperties);
+                    $newEdge->mergeStructurePropertiesWithParent();
+
+                    $this->nodesByPath[$path][$tree->getIdentityHash()] = $node;
+
+                    if ($nodeCallback) {
+                        $nodeCallback($nodeData);
+                    }
                 }
             }
 
             foreach ($this->graph->getTrees() as $tree) {
-                if (!isset($this->nodesByPath[$path][$tree->getIdentityHash()])) {
+                if ($path === '/sites' || !isset($this->nodesByPath[$path][$tree->getIdentityHash()])) {
                     $treeInFallbackHierarchy = $tree->getFallback();
                     $found = false;
                     while ($treeInFallbackHierarchy && !$found) {
@@ -190,12 +195,34 @@ class GraphService
                 }
             }
 
-
             if (is_null($maximumDepth) || substr_count($path, '/') <= $maximumDepth) {
                 $this->getEntityManager()->clear();
                 $this->initializeNodes($path, $nodeCallback, $maximumDepth);
             }
         }
+    }
+
+    /**
+     * @param Arboretum\Model\Tree $tree
+     * @param NodeData $nodeData
+     * @param array $edgeProperties
+     * @return Arboretum\Model\Node
+     */
+    protected function createNodeFromNodeData(Arboretum\Model\Tree $tree, ContentRepository\Model\NodeData $nodeData, array& $edgeProperties)
+    {
+        $nodeProperties = $nodeData->getProperties();
+        $nodeProperties['_creationDateTime'] = $nodeData->getCreationDateTime();
+        $nodeProperties['_lastModificationDateTime'] = $nodeData->getLastModificationDateTime();
+        $nodeProperties['_lastPublicationDateTime'] = $nodeData->getLastPublicationDateTime();
+        $edgeProperties = [
+            'accessRoles' => empty($nodeData->getAccessRoles()) ? ['Neos.Flow:Everybody'] : $nodeData->getAccessRoles(),
+            'hidden' => $nodeData->isHidden(),
+            'hiddenBeforeDateTime' => $nodeData->getHiddenBeforeDateTime(),
+            'hiddenAfterDateTime' => $nodeData->getHiddenAfterDateTime(),
+            'hiddenInIndex' => $nodeData->isHiddenInIndex(),
+        ];
+
+        return new Arboretum\Model\Node($tree, $nodeData->getNodeType()->getName(), $nodeData->getIdentifier(), $nodeProperties);
     }
 
     /**
