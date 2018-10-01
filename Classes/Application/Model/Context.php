@@ -76,6 +76,11 @@ class Context
         return $dimensions;
     }
 
+    public function getNodeByIdentifier(string $identifier): ?Arboretum\Model\Node
+    {
+        return $this->tree->getNode($identifier);
+    }
+
     /**
      * @return array
      */
